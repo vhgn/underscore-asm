@@ -1,6 +1,6 @@
 import { ok, isok, iserr, variant, type Result, type Variant, err } from "variants-ts";
 
-const actions: Record<string, number | undefined> = {
+export const actions = {
 	halt: 0b0000_0000_0000_0000,
 
 	move_reg_reg: 0b0000_0000_0000_0001,
@@ -45,6 +45,56 @@ const actions: Record<string, number | undefined> = {
 
 	call: 0b0000_0000_0010_0011,
 	ret: 0b0000_0000_0010_0100,
+	jump: 0b0000_0000_0010_0101,
+};
+
+type Action = keyof typeof actions;
+export const actionsReversed: Record<number, Action | undefined> = {
+	0b0000_0000_0000_0000: "halt",
+
+	0b0000_0000_0000_0001: "move_reg_reg",
+	0b0000_0000_0000_0010: "move_reg_dreg",
+	0b0000_0000_0000_0011: "move_dreg_reg",
+	0b0000_0000_0000_0100: "move_dreg_dreg",
+	0b0000_0000_0000_0101: "move_reg_lit",
+	0b0000_0000_0000_0110: "move_dreg_lit",
+
+	0b0000_0000_0000_0111: "add_reg",
+	0b0000_0000_0000_1000: "add_lit",
+	0b0000_0000_0000_1001: "mul_reg",
+	0b0000_0000_0000_1010: "mul_lit",
+	0b0000_0000_0000_1011: "div_reg",
+	0b0000_0000_0000_1100: "div_lit",
+	0b0000_0000_0000_1101: "neg",
+	0b0000_0000_0000_1110: "mod_reg",
+	0b0000_0000_0000_1111: "mod_lit",
+
+	0b0000_0000_0001_0000: "not",
+	0b0000_0000_0001_0001: "and_reg",
+	0b0000_0000_0001_0010: "and_lit",
+	0b0000_0000_0001_0011: "or_reg",
+	0b0000_0000_0001_0100: "or_lit",
+	0b0000_0000_0001_0101: "xor_reg",
+	0b0000_0000_0001_0110: "xor_lit",
+
+	0b0000_0000_0001_0111: "cmp_reg_reg",
+	0b0000_0000_0001_1000: "cmp_reg_lit",
+	0b0000_0000_0001_1001: "cmp_lit_reg",
+
+	0b0000_0000_0001_1010: "jumplt",
+	0b0000_0000_0001_1011: "jumple",
+	0b0000_0000_0001_1100: "jumpeq",
+	0b0000_0000_0001_1101: "jumpne",
+	0b0000_0000_0001_1110: "jumpgt",
+	0b0000_0000_0001_1111: "jumpge",
+
+	0b0000_0000_0010_0000: "push_reg",
+	0b0000_0000_0010_0001: "push_lit",
+	0b0000_0000_0010_0010: "pop_reg",
+
+	0b0000_0000_0010_0011: "call",
+	0b0000_0000_0010_0100: "ret",
+	0b0000_0000_0010_0101: "jump",
 };
 
 interface Mapping {
@@ -91,6 +141,7 @@ const overloads: Mapping[] = [
 	{ action: "jumpne", payload: ["label"], code: "jumpne" },
 	{ action: "jumpgt", payload: ["label"], code: "jumpgt" },
 	{ action: "jumpge", payload: ["label"], code: "jumpge" },
+	{ action: "jump", payload: ["label"], code: "jump" },
 
 	{ action: "push", payload: ["register"], code: "push_reg" },
 	{ action: "push", payload: ["literal"], code: "push_lit" },
@@ -102,7 +153,7 @@ const overloads: Mapping[] = [
 
 const actionNames = overloads.reduce((acc, x) => acc.add(x.action), new Set<string>());
 
-const registers: Record<string, number | undefined> = {
+export const registersMap: Record<string, number | undefined> = {
 	r0: 0b0000_0000_0000_0000,
 	r1: 0b0000_0000_0000_0001,
 	r2: 0b0000_0000_0000_0010,
@@ -113,7 +164,7 @@ const registers: Record<string, number | undefined> = {
 	r7: 0b0000_0000_0000_0111,
 	ip: 0b0000_0000_0000_1000,
 	sp: 0b0000_0000_0000_1001,
-	bp: 0b0000_0000_0000_1010,
+	cr: 0b0000_0000_0000_1011,
 };
 
 type Token =
@@ -200,7 +251,7 @@ function parse(parser: Parser, tokens: Token[], line: number): Parser {
 		return parser;
 	}
 
-	const actionCode = actions[mapping.code];
+	const actionCode = actions[mapping.code as Action];
 	if (actionCode === undefined) {
 		throw new Error(`Unknown action code ${mapping.code}`);
 	}
@@ -284,14 +335,14 @@ function tokenize(content: string, line: number): Result<Token[], CompileError[]
 			return ok(variant("action", word))
 		}
 
-		const registerCode = registers[word]
+		const registerCode = registersMap[word]
 		if (registerCode !== undefined) {
 			return ok(variant("register", registerCode))
 		}
 
 		const isDereferenced = word.startsWith("*")
 		if (isDereferenced) {
-			const registerCode = registers[word.slice(1)]
+			const registerCode = registersMap[word.slice(1)]
 
 			if (registerCode === undefined) {
 				return err({ line, message: "Dereferencing not a register" })
@@ -381,5 +432,454 @@ export function compile(code: string): Result<Uint16Array, CompileError[]> {
 	}
 
 	return ok(parser.memory)
+}
+
+export interface InstructionResult {
+	registerRead?: number;
+	registerModified?: number;
+	registerDereferencedRead?: number;
+	registerDereferencedModified?: number;
+	shouldHalt?: boolean;
+}
+
+/// TODO: initialize registers, stack grows up
+export function run(memory: Uint16Array, registers: Uint16Array): InstructionResult {
+	const instruction = registers[registersMap.ip!]
+	const action = actionsReversed[instruction]
+
+	if (action === undefined) {
+		throw new Error(`Unknown instruction ${instruction}`)
+	}
+
+	switch (action) {
+		case "halt": {
+			return { shouldHalt: true }
+		}
+
+		case "move_reg_reg": {
+			const destinationRegister = memory[instruction + 1]
+			const sourceRegister = memory[instruction + 2]
+
+			registers[destinationRegister] = registers[sourceRegister]
+
+			registers[registersMap.ip!] += 3
+
+			return { registerRead: sourceRegister, registerModified: destinationRegister }
+		}
+
+		case "move_reg_dreg": {
+			const destinationRegister = memory[instruction + 1]
+			const sourceDereferencedRegister = memory[instruction + 2]
+			const sourceAddress = registers[sourceDereferencedRegister]
+
+			registers[destinationRegister] = memory[sourceAddress]
+
+			registers[registersMap.ip!] += 3
+
+			return { registerDereferencedRead: sourceDereferencedRegister, registerModified: destinationRegister }
+		}
+
+		case "move_dreg_reg": {
+			const destinationDereferencedRegister = memory[instruction + 1]
+			const destinationAddress = registers[destinationDereferencedRegister]
+			const sourceRegister = memory[instruction + 2]
+
+			memory[destinationAddress] = registers[sourceRegister]
+
+			registers[registersMap.ip!] += 3
+
+			return { registerRead: sourceRegister, registerDereferencedModified: destinationDereferencedRegister }
+		}
+
+		case "move_dreg_dreg": {
+			const destinationDereferencedRegister = memory[instruction + 1]
+			const destinationAddress = registers[destinationDereferencedRegister]
+			const sourceDereferencedRegister = memory[instruction + 2]
+			const sourceAddress = registers[sourceDereferencedRegister]
+
+			memory[destinationAddress] = memory[sourceAddress]
+
+			registers[registersMap.ip!] += 3
+
+			return { registerDereferencedRead: sourceDereferencedRegister, registerDereferencedModified: destinationDereferencedRegister }
+		}
+
+		case "move_reg_lit": {
+			const destinationRegister = memory[instruction + 1]
+			const literal = memory[instruction + 2]
+
+			registers[destinationRegister] = literal
+
+			registers[registersMap.ip!] += 3
+
+			return { registerModified: destinationRegister }
+		}
+
+		case "move_dreg_lit": {
+			const destinationDereferencedRegister = memory[instruction + 1]
+			const destinationAddress = registers[destinationDereferencedRegister]
+			const literal = memory[instruction + 2]
+
+			memory[destinationAddress] = literal
+
+			registers[registersMap.ip!] += 3
+
+			return { registerDereferencedModified: destinationDereferencedRegister }
+		}
+
+		case "add_reg": {
+			const destinationRegister = memory[instruction + 1]
+			const sourceRegister = memory[instruction + 2]
+
+			registers[destinationRegister] += registers[sourceRegister]
+
+			registers[registersMap.ip!] += 3
+
+			return { registerRead: sourceRegister, registerModified: destinationRegister }
+		}
+
+		case "add_lit": {
+			const destinationRegister = memory[instruction + 1]
+			const literal = memory[instruction + 2]
+
+			registers[destinationRegister] += literal
+
+			registers[registersMap.ip!] += 3
+
+			return { registerModified: destinationRegister }
+		}
+
+		case "mul_reg": {
+			const destinationRegister = memory[instruction + 1]
+			const sourceRegister = memory[instruction + 2]
+
+			registers[destinationRegister] *= registers[sourceRegister]
+
+			registers[registersMap.ip!] += 3
+
+			return { registerRead: sourceRegister, registerModified: destinationRegister }
+		}
+
+		case "mul_lit": {
+			const destinationRegister = memory[instruction + 1]
+			const literal = memory[instruction + 2]
+
+			registers[destinationRegister] *= literal
+
+			registers[registersMap.ip!] += 3
+
+			return { registerModified: destinationRegister }
+		}
+
+		case "div_reg": {
+			const destinationRegister = memory[instruction + 1]
+			const sourceRegister = memory[instruction + 2]
+
+			registers[destinationRegister] = Math.floor(registers[destinationRegister] / registers[sourceRegister])
+
+			registers[registersMap.ip!] += 3
+
+			return { registerRead: sourceRegister, registerModified: destinationRegister }
+		}
+
+		case "div_lit": {
+			const destinationRegister = memory[instruction + 1]
+			const literal = memory[instruction + 2]
+
+			registers[destinationRegister] = Math.floor(registers[destinationRegister] / literal)
+
+			registers[registersMap.ip!] += 3
+
+			return { registerModified: destinationRegister }
+		}
+
+		case "neg": {
+			const destinationRegister = memory[instruction + 1]
+			
+			registers[destinationRegister] = -registers[destinationRegister]
+
+			registers[registersMap.ip!] += 2
+
+			return { registerModified: destinationRegister }
+		}
+
+		case "mod_reg": {
+			const destinationRegister = memory[instruction + 1]
+			const sourceRegister = memory[instruction + 2]
+
+			registers[destinationRegister] %= registers[sourceRegister]
+
+			registers[registersMap.ip!] += 3
+
+			return { registerRead: sourceRegister, registerModified: destinationRegister }
+		}
+
+		case "mod_lit": {
+			const destinationRegister = memory[instruction + 1]
+			const literal = memory[instruction + 2]
+
+			registers[destinationRegister] %= literal
+
+			registers[registersMap.ip!] += 3
+
+			return { registerModified: destinationRegister }
+		}
+
+		case "not": {
+			const destinationRegister = memory[instruction + 1]
+
+			registers[destinationRegister] = ~registers[destinationRegister]
+
+			registers[registersMap.ip!] += 2
+
+			return { registerModified: destinationRegister }
+		}
+
+		case "and_reg": {
+			const destinationRegister = memory[instruction + 1]
+			const sourceRegister = memory[instruction + 2]
+
+			registers[destinationRegister] &= registers[sourceRegister]
+
+			registers[registersMap.ip!] += 3
+
+			return { registerRead: sourceRegister, registerModified: destinationRegister }
+		}
+
+		case "and_lit": {
+			const destinationRegister = memory[instruction + 1]
+			const literal = memory[instruction + 2]
+
+			registers[destinationRegister] &= literal
+
+			registers[registersMap.ip!] += 3
+
+			return { registerModified: destinationRegister }
+		}
+
+		case "or_reg": {
+			const destinationRegister = memory[instruction + 1]
+			const sourceRegister = memory[instruction + 2]
+
+			registers[destinationRegister] |= registers[sourceRegister]
+
+			registers[registersMap.ip!] += 3
+
+			return { registerRead: sourceRegister, registerModified: destinationRegister }
+		}
+
+		case "or_lit": {
+			const destinationRegister = memory[instruction + 1]
+			const literal = memory[instruction + 2]
+
+			registers[destinationRegister] |= literal
+
+			registers[registersMap.ip!] += 3
+
+			return { registerModified: destinationRegister }
+		}
+
+		case "xor_reg": {
+			const destinationRegister = memory[instruction + 1]
+			const sourceRegister = memory[instruction + 2]
+
+			registers[destinationRegister] ^= registers[sourceRegister]
+
+			registers[registersMap.ip!] += 3
+
+			return { registerRead: sourceRegister, registerModified: destinationRegister }
+		}
+
+		case "xor_lit": {
+			const destinationRegister = memory[instruction + 1]
+			const literal = memory[instruction + 2]
+
+			registers[destinationRegister] ^= literal
+
+			registers[registersMap.ip!] += 3
+
+			return { registerModified: destinationRegister }
+		}
+
+		case "cmp_reg_reg": {
+			const leftRegister = memory[instruction + 1]
+			const rightRegister = memory[instruction + 2]
+
+			const left = registers[leftRegister]
+			const right = registers[rightRegister]
+			registers[registersMap.cr!] = left - right;
+
+			registers[registersMap.ip!] += 3
+
+			return { registerModified: registersMap.cr! }
+		}
+
+		case "cmp_reg_lit": {
+			const leftRegister = memory[instruction + 1]
+			const left = registers[leftRegister]
+
+			const right = memory[instruction + 2]
+
+			registers[registersMap.cr!] = left - right;
+
+			registers[registersMap.ip!] += 3
+
+			return { registerModified: registersMap.cr! }
+		}
+
+		case "cmp_lit_reg": {
+			const left = memory[instruction + 1]
+
+			const rightRegister = memory[instruction + 2]
+			const right = registers[rightRegister]
+
+			registers[registersMap.cr!] = left - right;
+			
+			registers[registersMap.ip!] += 3
+
+			return { registerModified: registersMap.cr! }
+		}
+
+		case "jumplt": {
+			const label = memory[instruction + 1]
+
+			if (registers[registersMap.cr!] < 0) {
+				registers[registersMap.ip!] = label
+			} else {
+				registers[registersMap.ip!] += 2
+			}
+
+			return { registerRead: registersMap.cr! }
+		}
+
+		case "jumple": {
+			const label = memory[instruction + 1]
+
+			if (registers[registersMap.cr!] <= 0) {
+				registers[registersMap.ip!] = label
+			} else {
+				registers[registersMap.ip!] += 2
+			}
+
+			return { registerRead: registersMap.cr! }
+		}
+
+		case "jumpeq": {
+			const label = memory[instruction + 1]
+
+			if (registers[registersMap.cr!] === 0) {
+				registers[registersMap.ip!] = label
+			} else {
+				registers[registersMap.ip!] += 2
+			}
+
+			return { registerRead: registersMap.cr! }
+		}
+
+		case "jumpne": {
+			const label = memory[instruction + 1]
+
+			if (registers[registersMap.cr!] !== 0) {
+				registers[registersMap.ip!] = label
+			} else {
+				registers[registersMap.ip!] += 2
+			}
+
+			return { registerRead: registersMap.cr! }
+		}
+
+		case "jumpgt": {
+			const label = memory[instruction + 1]
+
+			if (registers[registersMap.cr!] > 0) {
+				registers[registersMap.ip!] = label
+			} else {
+				registers[registersMap.ip!] += 2
+			}
+
+			return { registerRead: registersMap.cr! }
+		}
+
+		case "jumpge": {
+			const label = memory[instruction + 1]
+
+			if (registers[registersMap.cr!] >= 0) {
+				registers[registersMap.ip!] = label
+			} else {
+				registers[registersMap.ip!] += 2
+			}
+
+			return { registerRead: registersMap.cr! }
+		}
+
+		case "jump": {
+			const label = memory[instruction + 1]
+
+			registers[registersMap.ip!] = label
+
+			return {}
+		}
+
+		case "push_reg": {
+			const register = memory[instruction + 1]
+			const value = registers[register]
+
+			memory[registers[registersMap.sp!]] = value
+
+			registers[registersMap.sp!] += 1
+
+			registers[registersMap.ip!] += 2
+
+			return { registerRead: register }
+		}
+
+		case "push_lit": {
+			const literal = memory[instruction + 1]
+
+			memory[registers[registersMap.sp!]] = literal
+
+			registers[registersMap.sp!] += 1
+
+			registers[registersMap.ip!] += 2
+
+			return {}
+		}
+
+		case "pop_reg": {
+			const register = memory[instruction + 1]
+
+			registers[registersMap.sp!] -= 1
+
+			const value = memory[registers[registersMap.sp!]]
+
+			registers[register] = value
+
+			registers[registersMap.ip!] += 2
+
+			return { registerModified: register }
+		}
+
+		case "call": {
+			const procedure = memory[instruction + 1]
+
+			memory[registers[registersMap.sp!]] = registers[registersMap.ip!] + 2
+
+			registers[registersMap.sp!] += 1
+
+			registers[registersMap.ip!] = procedure
+
+			return {}
+		}
+
+		case "ret": {
+			registers[registersMap.sp!] -= 1
+
+			const address = memory[registers[registersMap.sp!]]
+
+			registers[registersMap.ip!] = address
+
+			return {}
+		}
+	}
 }
 
