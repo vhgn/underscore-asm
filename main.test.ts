@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { compile, actions, registers } from ".";
+import { compile, actions, registersMap, init, run } from ".";
 import { iserr } from "variants-ts";
 
 test("should compile `move`", () => {
@@ -8,9 +8,9 @@ test("should compile `move`", () => {
 		throw new Error(JSON.stringify(result.data));
 	}
 
-	expect(result.data[0]).toBe(actions.move_reg_reg);
-	expect(result.data[1]).toBe(registers.r0);
-	expect(result.data[2]).toBe(registers.r1);
+	expect(result.data.memory[0]).toBe(actions.move_reg_reg);
+	expect(result.data.memory[1]).toBe(registersMap.r0);
+	expect(result.data.memory[2]).toBe(registersMap.r1);
 });
 
 test("should compile `move` with literal", () => {
@@ -19,9 +19,9 @@ test("should compile `move` with literal", () => {
 		throw new Error(JSON.stringify(result.data));
 	}
 
-	expect(result.data[0]).toEqual(actions.move_reg_lit);
-	expect(result.data[1]).toEqual(registers.r0);
-	expect(result.data[2]).toEqual(5);
+	expect(result.data.memory[0]).toEqual(actions.move_reg_lit);
+	expect(result.data.memory[1]).toEqual(registersMap.r0);
+	expect(result.data.memory[2]).toEqual(5);
 });
 
 test("should compile `move` with dereference", () => {
@@ -30,9 +30,9 @@ test("should compile `move` with dereference", () => {
 		throw new Error(JSON.stringify(result.data));
 	}
 
-	expect(result.data[0]).toEqual(actions.move_reg_dreg);
-	expect(result.data[1]).toEqual(registers.r0);
-	expect(result.data[2]).toEqual(registers.r1);
+	expect(result.data.memory[0]).toEqual(actions.move_reg_dreg);
+	expect(result.data.memory[1]).toEqual(registersMap.r0);
+	expect(result.data.memory[2]).toEqual(registersMap.r1);
 });
 
 test("should compile example 1", () => {
@@ -45,23 +45,23 @@ test("should compile example 1", () => {
 		throw new Error(JSON.stringify(result.data));
 	}
 
-	expect(result.data[0]).toEqual(actions.move_reg_lit);
-	expect(result.data[1]).toEqual(registers.r0);
-	expect(result.data[2]).toEqual(3);
+	expect(result.data.memory[0]).toEqual(actions.move_reg_lit);
+	expect(result.data.memory[1]).toEqual(registersMap.r0);
+	expect(result.data.memory[2]).toEqual(3);
 
-	expect(result.data[3]).toEqual(actions.move_reg_lit);
-	expect(result.data[4]).toEqual(registers.r1);
-	expect(result.data[5]).toEqual(2);
+	expect(result.data.memory[3]).toEqual(actions.move_reg_lit);
+	expect(result.data.memory[4]).toEqual(registersMap.r1);
+	expect(result.data.memory[5]).toEqual(2);
 
-	expect(result.data[6]).toEqual(actions.add_reg);
-	expect(result.data[7]).toEqual(registers.r0);
-	expect(result.data[8]).toEqual(registers.r1);
+	expect(result.data.memory[6]).toEqual(actions.add_reg);
+	expect(result.data.memory[7]).toEqual(registersMap.r0);
+	expect(result.data.memory[8]).toEqual(registersMap.r1);
 });
 
 test("should compile example 2", () => {
 	const result = compile(`
 	   # Define a start label
-		!start
+		!main
 
 		# Initialize variables
 		move r1 101
@@ -119,13 +119,166 @@ test("should compile example 2", () => {
 		throw new Error(JSON.stringify(result.data));
 	}
 
-	expect(result.data[0]).toEqual(actions.move_reg_lit);
-	expect(result.data[1]).toEqual(registers.r1);
-	expect(result.data[2]).toEqual(5);
+	expect(result.data.memory[0]).toEqual(actions.move_reg_lit);
+	expect(result.data.memory[1]).toEqual(registersMap.r1);
+	expect(result.data.memory[2]).toEqual(5);
 
-	expect(result.data[3]).toEqual(actions.move_reg_lit);
-	expect(result.data[4]).toEqual(registers.r2);
-	expect(result.data[5]).toEqual(1);
+	expect(result.data.memory[3]).toEqual(actions.move_reg_lit);
+	expect(result.data.memory[4]).toEqual(registersMap.r2);
+	expect(result.data.memory[5]).toEqual(1);
+});
+
+test("should compile and run example3", () => {
+	const result = compile(`
+		# Define a start label
+		!main
+			move r0 0
+			move r1 101
+			move r2 1
+		!loop
+			add r1 r2
+			cmp r1 1010
+			jumpeq @end
+			jump @loop
+		!end
+			halt
+	`);
+
+	if (iserr(result)) {
+		throw new Error(JSON.stringify(result.data));
+	}
+
+	expect(result.data.memory[0]).toEqual(actions.move_reg_lit);
+	expect(result.data.memory[1]).toEqual(registersMap.r0);
+	expect(result.data.memory[2]).toEqual(0);
+
+	expect(result.data.memory[3]).toEqual(actions.move_reg_lit);
+	expect(result.data.memory[4]).toEqual(registersMap.r1);
+	expect(result.data.memory[5]).toEqual(5);
+
+	expect(result.data.memory[6]).toEqual(actions.move_reg_lit);
+	expect(result.data.memory[7]).toEqual(registersMap.r2);
+	expect(result.data.memory[8]).toEqual(1);
+
+	expect(result.data.memory[9]).toEqual(actions.add_reg);
+	expect(result.data.memory[10]).toEqual(registersMap.r1);
+	expect(result.data.memory[11]).toEqual(registersMap.r2);
+
+	expect(result.data.memory[12]).toEqual(actions.cmp_reg_lit);
+	expect(result.data.memory[13]).toEqual(registersMap.r1);
+	expect(result.data.memory[14]).toEqual(10);
+
+	expect(result.data.memory[15]).toEqual(actions.jumpeq);
+	expect(result.data.memory[16]).toEqual(19);
+
+	expect(result.data.memory[17]).toEqual(actions.jump);
+	expect(result.data.memory[18]).toEqual(9);
+
+	expect(result.data.memory[19]).toEqual(actions.halt);
+
+	const vm = init(result.data);
+	expect(vm.registers[registersMap.ip!]).toEqual(0);
 
 
+	// move r0 0
+	run(vm);
+	expect(vm.registers[registersMap.r0!]).toEqual(0);
+	expect(vm.registers[registersMap.ip!]).toEqual(3);
+
+	// move r1 101
+	run(vm);
+	expect(vm.registers[registersMap.r1!]).toEqual(5);
+	expect(vm.registers[registersMap.ip!]).toEqual(6);
+
+	// move r2 1
+	run(vm);
+	expect(vm.registers[registersMap.r2!]).toEqual(1);
+	expect(vm.registers[registersMap.ip!]).toEqual(9);
+
+	// add r1 r2
+	run(vm);
+	expect(vm.registers[registersMap.r1!]).toEqual(6);
+	expect(vm.registers[registersMap.ip!]).toEqual(12);
+
+	// cmp r0 1010
+	run(vm);
+	expect(vm.registers[registersMap.r0!]).toEqual(0);
+	expect(vm.registers[registersMap.ip!]).toEqual(15);
+
+	// jumpeq @end (noop)
+	run(vm);
+	expect(vm.registers[registersMap.ip!]).toEqual(17);
+
+	// jump @loop
+	run(vm);
+	expect(vm.registers[registersMap.ip!]).toEqual(9);
+
+	// add r1 r2
+	run(vm);
+	expect(vm.registers[registersMap.r1!]).toEqual(7);
+	expect(vm.registers[registersMap.ip!]).toEqual(12);
+
+	// cmp r0 1010
+	run(vm);
+	expect(vm.registers[registersMap.ip!]).toEqual(15);
+
+	// jumpeq @end (noop)
+	run(vm);
+	expect(vm.registers[registersMap.ip!]).toEqual(17);
+
+	// jump @loop
+	run(vm);
+	expect(vm.registers[registersMap.ip!]).toEqual(9);
+
+	// add r1 r2
+	run(vm);
+	expect(vm.registers[registersMap.r1!]).toEqual(8);
+	expect(vm.registers[registersMap.ip!]).toEqual(12);
+
+	// cmp r0 1010
+	run(vm);
+	expect(vm.registers[registersMap.ip!]).toEqual(15);
+
+	// jumpeq @end (noop)
+	run(vm);
+	expect(vm.registers[registersMap.ip!]).toEqual(17);
+
+	// jump @loop
+	run(vm);
+	expect(vm.registers[registersMap.ip!]).toEqual(9);
+
+	// add r1 r2
+	run(vm);
+	expect(vm.registers[registersMap.r1!]).toEqual(9);
+	expect(vm.registers[registersMap.ip!]).toEqual(12);
+
+	// cmp r0 1010
+	run(vm);
+	expect(vm.registers[registersMap.ip!]).toEqual(15);
+
+	// jumpeq @end (noop)
+	run(vm);
+	expect(vm.registers[registersMap.ip!]).toEqual(17);
+
+	// jump @loop
+	run(vm);
+	expect(vm.registers[registersMap.ip!]).toEqual(9);
+
+	// add r1 r2
+	run(vm);
+	expect(vm.registers[registersMap.r1!]).toEqual(10);
+	expect(vm.registers[registersMap.ip!]).toEqual(12);
+
+	// cmp r1 1010
+	run(vm);
+	expect(vm.registers[registersMap.cr!]).toEqual(0);
+	expect(vm.registers[registersMap.ip!]).toEqual(15);
+
+	// jumpeq @end
+	run(vm);
+	expect(vm.registers[registersMap.ip!]).toEqual(19);
+
+	// halt
+	const {shouldHalt} = run(vm);
+	expect(shouldHalt).toEqual(true);
 });

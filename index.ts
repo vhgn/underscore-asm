@@ -164,7 +164,7 @@ export const registersMap: Record<string, number | undefined> = {
 	r7: 0b0000_0000_0000_0111,
 	ip: 0b0000_0000_0000_1000,
 	sp: 0b0000_0000_0000_1001,
-	cr: 0b0000_0000_0000_1011,
+	cr: 0b0000_0000_0000_1010,
 };
 
 type Token =
@@ -263,10 +263,12 @@ function parse(parser: Parser, tokens: Token[], line: number): Parser {
 		switch (token.type) {
 			case "procedure":
 				parser.procedureInjections.push({ address: parser.pointer, label: token.data, line });
+				parser.pointer++;
 				break;
 
 			case "label":
 				parser.labelInjections.push({ address: parser.pointer, label: token.data, line });
+				parser.pointer++;
 				break;
 
 			case "register":
@@ -398,7 +400,13 @@ function tokenize(content: string, line: number): Result<Token[], CompileError[]
 	return ok(tokenized.filter(isok).map((x) => x.data));
 }
 
-export function compile(code: string): Result<Uint16Array, CompileError[]> {
+export interface Compiled {
+	memory: Uint16Array;
+	entrypoint: number;
+	size: number;
+}
+
+export function compile(code: string): Result<Compiled, CompileError[]> {
 	const tokenized = code
 		.split("\n")
 		.map((x) => x.trim())
@@ -431,7 +439,27 @@ export function compile(code: string): Result<Uint16Array, CompileError[]> {
 		return result
 	}
 
-	return ok(parser.memory)
+	return ok({
+		memory: parser.memory,
+		entrypoint: parser.procedureAddresses["main"] ?? 0,
+		size: parser.pointer,
+	})
+}
+
+export interface VM {
+	memory: Uint16Array;
+	registers: Uint16Array;
+}
+
+export function init(compiled: Compiled): VM {
+	const { memory, size, entrypoint } = compiled;
+	const registerSize = Object.keys(registersMap).length
+	const registers = new Uint16Array(registerSize)
+
+	registers[registersMap.ip!] = entrypoint
+	registers[registersMap.sp!] = size
+
+	return { memory, registers }
 }
 
 export interface InstructionResult {
@@ -442,10 +470,11 @@ export interface InstructionResult {
 	shouldHalt?: boolean;
 }
 
-/// TODO: initialize registers, stack grows up
-export function run(memory: Uint16Array, registers: Uint16Array): InstructionResult {
+export function run(vm: VM): InstructionResult {
+	const { memory, registers } = vm;
 	const instruction = registers[registersMap.ip!]
-	const action = actionsReversed[instruction]
+	const instructionAction = memory[instruction]
+	const action = actionsReversed[instructionAction]
 
 	if (action === undefined) {
 		throw new Error(`Unknown instruction ${instruction}`)
@@ -595,7 +624,7 @@ export function run(memory: Uint16Array, registers: Uint16Array): InstructionRes
 
 		case "neg": {
 			const destinationRegister = memory[instruction + 1]
-			
+
 			registers[destinationRegister] = -registers[destinationRegister]
 
 			registers[registersMap.ip!] += 2
@@ -734,7 +763,7 @@ export function run(memory: Uint16Array, registers: Uint16Array): InstructionRes
 			const right = registers[rightRegister]
 
 			registers[registersMap.cr!] = left - right;
-			
+
 			registers[registersMap.ip!] += 3
 
 			return { registerModified: registersMap.cr! }
