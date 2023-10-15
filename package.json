@@ -1,15 +1,23 @@
 {
-  "name": "underscore-asm",
-  "version": "0.0.1",
-  "module": "index.ts",
-  "type": "module",
-  "devDependencies": {
-    "bun-types": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "variants-ts": "^1.0.0"
-  }
+	"name": "underscore-asm",
+	"description": "Assembly compiler and interpreter (educational)",
+	"version": "0.0.2",
+	"keywords": [
+		"_asm",
+		"assembly",
+		"compiler",
+		"interpreter"
+	],
+	"license": "MIT",
+	"module": "index.ts",
+	"type": "module",
+	"devDependencies": {
+		"bun-types": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"variants-ts": "^1.0.0"
+	}
 }
