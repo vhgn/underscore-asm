@@ -193,6 +193,7 @@ export interface Parser {
 	labelAddresses: Record<string, number | undefined>;
 	procedureInjections: Injection[];
 	procedureAddresses: Record<string, number | undefined>;
+	sourceMaps: Map<number, number>;
 	pointer: number;
 	memory: Uint16Array;
 	errors: CompileError[];
@@ -208,6 +209,7 @@ export interface InstructionResult {
 export interface VM {
 	memory: Uint16Array;
 	registers: Uint16Array;
+	maps: Map<number, number>;
 }
 
 export const LABEL_DEFINE = "!";
@@ -219,5 +221,6 @@ export const PROCEDURE_USE = "<";
 export interface Compiled {
 	memory: Uint16Array;
 	entrypoint: number;
+	maps: Map<number, number>;
 	size: number;
 }

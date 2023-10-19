@@ -59,6 +59,7 @@ export function parse(parser: Parser, tokens: Token[], line: number): Parser {
 		throw new Error(`Unknown action code ${mapping.code}`);
 	}
 
+	parser.sourceMaps.set(parser.pointer, line + 1);
 	parser.memory[parser.pointer] = actionCode;
 	parser.pointer++;
 

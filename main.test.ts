@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test";
-import { compile, actions, registersMap, init, run } from ".";
 import { iserr } from "variants-ts";
+
+import { actions, registersMap } from "./src/common";
+import { compile, init } from "./src/compile";
+import { run } from "./src/run";
 
 test("should compile `move`", () => {
 	const result = compile("move r0 r1");
@@ -179,13 +182,22 @@ test("should compile and run example3", () => {
 	const vm = init(result.data);
 	expect(vm.registers[registersMap.ip!]).toEqual(0);
 
-
+	let line;
+	let ip;
 	// move r0 0
+	ip = vm.registers[registersMap.ip!];
+	line = vm.maps.get(ip);
+	expect(line).toEqual(4);
+
 	run(vm);
 	expect(vm.registers[registersMap.r0!]).toEqual(0);
 	expect(vm.registers[registersMap.ip!]).toEqual(3);
 
 	// move r1 101
+	ip = vm.registers[registersMap.ip!];
+	line = vm.maps.get(ip);
+	expect(line).toEqual(5);
+
 	run(vm);
 	expect(vm.registers[registersMap.r1!]).toEqual(5);
 	expect(vm.registers[registersMap.ip!]).toEqual(6);
@@ -275,10 +287,14 @@ test("should compile and run example3", () => {
 	expect(vm.registers[registersMap.ip!]).toEqual(15);
 
 	// jumpeq @end
+	ip = vm.registers[registersMap.ip!];
+	line = vm.maps.get(ip);
+	expect(line).toEqual(10);
+
 	run(vm);
 	expect(vm.registers[registersMap.ip!]).toEqual(19);
 
 	// halt
-	const {shouldHalt} = run(vm);
+	const { shouldHalt } = run(vm);
 	expect(shouldHalt).toEqual(true);
 });

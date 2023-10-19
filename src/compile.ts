@@ -21,6 +21,7 @@ export function compile(code: string): Result<Compiled, CompileError[]> {
 		labelAddresses: {},
 		procedureInjections: [],
 		procedureAddresses: {},
+		sourceMaps: new Map(),
 		pointer: 0,
 		memory: new Uint16Array(1024),
 		errors: [],
@@ -40,16 +41,17 @@ export function compile(code: string): Result<Compiled, CompileError[]> {
 		memory: parser.memory,
 		entrypoint: parser.procedureAddresses["main"] ?? 0,
 		size: parser.pointer,
+		maps: parser.sourceMaps,
 	})
 }
 export function init(compiled: Compiled): VM {
-	const { memory, size, entrypoint } = compiled;
+	const { memory, size, entrypoint, maps } = compiled;
 	const registerSize = Object.keys(registersMap).length
 	const registers = new Uint16Array(registerSize)
 
 	registers[registersMap.ip!] = entrypoint
 	registers[registersMap.sp!] = size
 
-	return { memory, registers }
+	return { memory, registers, maps }
 }
 
