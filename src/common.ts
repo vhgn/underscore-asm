@@ -1,6 +1,6 @@
 import { type Variant } from "variants-ts";
 
-export const actions = {
+export const actionsNameToBinary = {
 	halt: 0b0000_0000_0000_0000,
 
 	move_reg_reg: 0b0000_0000_0000_0001,
@@ -48,8 +48,8 @@ export const actions = {
 	jump: 0b0000_0000_0010_0101,
 };
 
-export type Action = keyof typeof actions;
-export const actionsReversed: Record<number, Action | undefined> = {
+export type ActionId = keyof typeof actionsNameToBinary;
+export const actionsBinaryToName: Record<number, ActionId | undefined> = {
 	0b0000_0000_0000_0000: "halt",
 
 	0b0000_0000_0000_0001: "move_reg_reg",
@@ -97,13 +97,13 @@ export const actionsReversed: Record<number, Action | undefined> = {
 	0b0000_0000_0010_0101: "jump",
 };
 
-export interface Mapping {
+export interface ActionMapping {
 	action: string;
 	payload: Token["type"][];
 	code: string;
 }
 
-export const overloads: Mapping[] = [
+export const actionOverloads: ActionMapping[] = [
 	{ action: "halt", payload: [], code: "halt" },
 
 	{ action: "move", payload: ["register", "register"], code: "move_reg_reg" },
@@ -151,9 +151,9 @@ export const overloads: Mapping[] = [
 	{ action: "ret", payload: [], code: "ret" },
 ];
 
-export const actionNames = overloads.reduce((acc, x) => acc.add(x.action), new Set<string>());
+export const actionNameSet = actionOverloads.reduce((acc, x) => acc.add(x.action), new Set<string>());
 
-export const registersMap: Record<string, number | undefined> = {
+export const registerNameToBinary: Record<string, number | undefined> = {
 	r0: 0b0000_0000_0000_0000,
 	r1: 0b0000_0000_0000_0001,
 	r2: 0b0000_0000_0000_0010,
@@ -177,7 +177,7 @@ export type Token =
 	| Variant<"label_definition", string>
 	| Variant<"procedure_definition", string>;
 
-export interface Injection {
+export interface NameInjection {
 	address: number;
 	label: string;
 	line: number;
@@ -188,10 +188,10 @@ export interface CompileError {
 	message: string;
 }
 
-export interface Parser {
-	labelInjections: Injection[];
+export interface ParseAccumulator {
+	labelInjections: NameInjection[];
 	labelAddresses: Record<string, number | undefined>;
-	procedureInjections: Injection[];
+	procedureInjections: NameInjection[];
 	procedureAddresses: Record<string, number | undefined>;
 	sourceMaps: Map<number, number>;
 	pointer: number;
@@ -218,7 +218,7 @@ export const LABEL_USE = "@";
 export const PROCEDURE_USE = "<";
 
 
-export interface Compiled {
+export interface CompiledMemory {
 	memory: Uint16Array;
 	entrypoint: number;
 	maps: Map<number, number>;

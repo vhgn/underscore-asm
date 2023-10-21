@@ -1,9 +1,9 @@
 import { Result, err, iserr, isok, ok } from "variants-ts"
-import { CompileError, Compiled, VM, registersMap } from "./common"
+import { CompileError, CompiledMemory, VM, registerNameToBinary } from "./common"
 import { tokenize } from "./tokenize"
 import { inject, parse } from "./parse"
 
-export function compile(code: string): Result<Compiled, CompileError[]> {
+export function compile(code: string): Result<CompiledMemory, CompileError[]> {
 	const tokenized = code
 		.split("\n")
 		.map((x) => x.trim())
@@ -44,13 +44,13 @@ export function compile(code: string): Result<Compiled, CompileError[]> {
 		maps: parser.sourceMaps,
 	})
 }
-export function init(compiled: Compiled): VM {
+export function init(compiled: CompiledMemory): VM {
 	const { memory, size, entrypoint, maps } = compiled;
-	const registerSize = Object.keys(registersMap).length
+	const registerSize = Object.keys(registerNameToBinary).length
 	const registers = new Uint16Array(registerSize)
 
-	registers[registersMap.ip!] = entrypoint
-	registers[registersMap.sp!] = size
+	registers[registerNameToBinary.ip!] = entrypoint
+	registers[registerNameToBinary.sp!] = size
 
 	return { memory, registers, maps }
 }

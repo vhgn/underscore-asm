@@ -1,5 +1,5 @@
 import { Result, err, iserr, isok, ok, variant } from "variants-ts";
-import { CompileError, LABEL_DEFINE, LABEL_USE, PROCEDURE_DEFINE, PROCEDURE_USE, Token, actionNames, registersMap } from "./common";
+import { CompileError, LABEL_DEFINE, LABEL_USE, PROCEDURE_DEFINE, PROCEDURE_USE, Token, actionNameSet, registerNameToBinary } from "./common";
 
 export function tokenize(content: string, line: number): Result<Token[], CompileError[]> {
 	const isEmpty = content.length === 0
@@ -15,19 +15,19 @@ export function tokenize(content: string, line: number): Result<Token[], Compile
 	}
 
 	const tokenized = content.split(" ").map((word): Result<Token, CompileError> => {
-		const isAction = actionNames.has(word)
+		const isAction = actionNameSet.has(word)
 		if (isAction) {
 			return ok(variant("action", word))
 		}
 
-		const registerCode = registersMap[word]
+		const registerCode = registerNameToBinary[word]
 		if (registerCode !== undefined) {
 			return ok(variant("register", registerCode))
 		}
 
 		const isDereferenced = word.startsWith("*")
 		if (isDereferenced) {
-			const registerCode = registersMap[word.slice(1)]
+			const registerCode = registerNameToBinary[word.slice(1)]
 
 			if (registerCode === undefined) {
 				return err({ line, message: "Dereferencing not a register" })

@@ -1,10 +1,10 @@
-import { InstructionResult, VM, actionsReversed, registersMap } from "./common";
+import { InstructionResult, VM, actionsBinaryToName, registerNameToBinary } from "./common";
 
 export function run(vm: VM): InstructionResult {
 	const { memory, registers } = vm;
-	const instruction = registers[registersMap.ip!]
+	const instruction = registers[registerNameToBinary.ip!]
 	const instructionAction = memory[instruction]
-	const action = actionsReversed[instructionAction]
+	const action = actionsBinaryToName[instructionAction]
 
 	if (action === undefined) {
 		throw new Error(`Unknown instruction ${instruction}`)
@@ -21,7 +21,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] = registers[sourceRegister]
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerRead: sourceRegister, registerModified: destinationRegister }
 		}
@@ -33,7 +33,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] = memory[sourceAddress]
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerDereferencedRead: sourceDereferencedRegister, registerModified: destinationRegister }
 		}
@@ -45,7 +45,7 @@ export function run(vm: VM): InstructionResult {
 
 			memory[destinationAddress] = registers[sourceRegister]
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerRead: sourceRegister, registerDereferencedModified: destinationDereferencedRegister }
 		}
@@ -58,7 +58,7 @@ export function run(vm: VM): InstructionResult {
 
 			memory[destinationAddress] = memory[sourceAddress]
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerDereferencedRead: sourceDereferencedRegister, registerDereferencedModified: destinationDereferencedRegister }
 		}
@@ -69,7 +69,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] = literal
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerModified: destinationRegister }
 		}
@@ -81,7 +81,7 @@ export function run(vm: VM): InstructionResult {
 
 			memory[destinationAddress] = literal
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerDereferencedModified: destinationDereferencedRegister }
 		}
@@ -92,7 +92,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] += registers[sourceRegister]
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerRead: sourceRegister, registerModified: destinationRegister }
 		}
@@ -103,7 +103,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] += literal
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerModified: destinationRegister }
 		}
@@ -114,7 +114,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] *= registers[sourceRegister]
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerRead: sourceRegister, registerModified: destinationRegister }
 		}
@@ -125,7 +125,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] *= literal
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerModified: destinationRegister }
 		}
@@ -136,7 +136,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] = Math.floor(registers[destinationRegister] / registers[sourceRegister])
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerRead: sourceRegister, registerModified: destinationRegister }
 		}
@@ -147,7 +147,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] = Math.floor(registers[destinationRegister] / literal)
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerModified: destinationRegister }
 		}
@@ -157,7 +157,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] = -registers[destinationRegister]
 
-			registers[registersMap.ip!] += 2
+			registers[registerNameToBinary.ip!] += 2
 
 			return { registerModified: destinationRegister }
 		}
@@ -168,7 +168,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] %= registers[sourceRegister]
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerRead: sourceRegister, registerModified: destinationRegister }
 		}
@@ -179,7 +179,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] %= literal
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerModified: destinationRegister }
 		}
@@ -189,7 +189,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] = ~registers[destinationRegister]
 
-			registers[registersMap.ip!] += 2
+			registers[registerNameToBinary.ip!] += 2
 
 			return { registerModified: destinationRegister }
 		}
@@ -200,7 +200,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] &= registers[sourceRegister]
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerRead: sourceRegister, registerModified: destinationRegister }
 		}
@@ -211,7 +211,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] &= literal
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerModified: destinationRegister }
 		}
@@ -222,7 +222,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] |= registers[sourceRegister]
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerRead: sourceRegister, registerModified: destinationRegister }
 		}
@@ -233,7 +233,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] |= literal
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerModified: destinationRegister }
 		}
@@ -244,7 +244,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] ^= registers[sourceRegister]
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerRead: sourceRegister, registerModified: destinationRegister }
 		}
@@ -255,7 +255,7 @@ export function run(vm: VM): InstructionResult {
 
 			registers[destinationRegister] ^= literal
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
 			return { registerModified: destinationRegister }
 		}
@@ -266,11 +266,11 @@ export function run(vm: VM): InstructionResult {
 
 			const left = registers[leftRegister]
 			const right = registers[rightRegister]
-			registers[registersMap.cr!] = left - right;
+			registers[registerNameToBinary.cr!] = left - right;
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
-			return { registerModified: registersMap.cr! }
+			return { registerModified: registerNameToBinary.cr! }
 		}
 
 		case "cmp_reg_lit": {
@@ -279,11 +279,11 @@ export function run(vm: VM): InstructionResult {
 
 			const right = memory[instruction + 2]
 
-			registers[registersMap.cr!] = left - right;
+			registers[registerNameToBinary.cr!] = left - right;
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
-			return { registerModified: registersMap.cr! }
+			return { registerModified: registerNameToBinary.cr! }
 		}
 
 		case "cmp_lit_reg": {
@@ -292,89 +292,89 @@ export function run(vm: VM): InstructionResult {
 			const rightRegister = memory[instruction + 2]
 			const right = registers[rightRegister]
 
-			registers[registersMap.cr!] = left - right;
+			registers[registerNameToBinary.cr!] = left - right;
 
-			registers[registersMap.ip!] += 3
+			registers[registerNameToBinary.ip!] += 3
 
-			return { registerModified: registersMap.cr! }
+			return { registerModified: registerNameToBinary.cr! }
 		}
 
 		case "jumplt": {
 			const label = memory[instruction + 1]
 
-			if (registers[registersMap.cr!] < 0) {
-				registers[registersMap.ip!] = label
+			if (registers[registerNameToBinary.cr!] < 0) {
+				registers[registerNameToBinary.ip!] = label
 			} else {
-				registers[registersMap.ip!] += 2
+				registers[registerNameToBinary.ip!] += 2
 			}
 
-			return { registerRead: registersMap.cr! }
+			return { registerRead: registerNameToBinary.cr! }
 		}
 
 		case "jumple": {
 			const label = memory[instruction + 1]
 
-			if (registers[registersMap.cr!] <= 0) {
-				registers[registersMap.ip!] = label
+			if (registers[registerNameToBinary.cr!] <= 0) {
+				registers[registerNameToBinary.ip!] = label
 			} else {
-				registers[registersMap.ip!] += 2
+				registers[registerNameToBinary.ip!] += 2
 			}
 
-			return { registerRead: registersMap.cr! }
+			return { registerRead: registerNameToBinary.cr! }
 		}
 
 		case "jumpeq": {
 			const label = memory[instruction + 1]
 
-			if (registers[registersMap.cr!] === 0) {
-				registers[registersMap.ip!] = label
+			if (registers[registerNameToBinary.cr!] === 0) {
+				registers[registerNameToBinary.ip!] = label
 			} else {
-				registers[registersMap.ip!] += 2
+				registers[registerNameToBinary.ip!] += 2
 			}
 
-			return { registerRead: registersMap.cr! }
+			return { registerRead: registerNameToBinary.cr! }
 		}
 
 		case "jumpne": {
 			const label = memory[instruction + 1]
 
-			if (registers[registersMap.cr!] !== 0) {
-				registers[registersMap.ip!] = label
+			if (registers[registerNameToBinary.cr!] !== 0) {
+				registers[registerNameToBinary.ip!] = label
 			} else {
-				registers[registersMap.ip!] += 2
+				registers[registerNameToBinary.ip!] += 2
 			}
 
-			return { registerRead: registersMap.cr! }
+			return { registerRead: registerNameToBinary.cr! }
 		}
 
 		case "jumpgt": {
 			const label = memory[instruction + 1]
 
-			if (registers[registersMap.cr!] > 0) {
-				registers[registersMap.ip!] = label
+			if (registers[registerNameToBinary.cr!] > 0) {
+				registers[registerNameToBinary.ip!] = label
 			} else {
-				registers[registersMap.ip!] += 2
+				registers[registerNameToBinary.ip!] += 2
 			}
 
-			return { registerRead: registersMap.cr! }
+			return { registerRead: registerNameToBinary.cr! }
 		}
 
 		case "jumpge": {
 			const label = memory[instruction + 1]
 
-			if (registers[registersMap.cr!] >= 0) {
-				registers[registersMap.ip!] = label
+			if (registers[registerNameToBinary.cr!] >= 0) {
+				registers[registerNameToBinary.ip!] = label
 			} else {
-				registers[registersMap.ip!] += 2
+				registers[registerNameToBinary.ip!] += 2
 			}
 
-			return { registerRead: registersMap.cr! }
+			return { registerRead: registerNameToBinary.cr! }
 		}
 
 		case "jump": {
 			const label = memory[instruction + 1]
 
-			registers[registersMap.ip!] = label
+			registers[registerNameToBinary.ip!] = label
 
 			return {}
 		}
@@ -383,11 +383,11 @@ export function run(vm: VM): InstructionResult {
 			const register = memory[instruction + 1]
 			const value = registers[register]
 
-			memory[registers[registersMap.sp!]] = value
+			memory[registers[registerNameToBinary.sp!]] = value
 
-			registers[registersMap.sp!] += 1
+			registers[registerNameToBinary.sp!] += 1
 
-			registers[registersMap.ip!] += 2
+			registers[registerNameToBinary.ip!] += 2
 
 			return { registerRead: register }
 		}
@@ -395,11 +395,11 @@ export function run(vm: VM): InstructionResult {
 		case "push_lit": {
 			const literal = memory[instruction + 1]
 
-			memory[registers[registersMap.sp!]] = literal
+			memory[registers[registerNameToBinary.sp!]] = literal
 
-			registers[registersMap.sp!] += 1
+			registers[registerNameToBinary.sp!] += 1
 
-			registers[registersMap.ip!] += 2
+			registers[registerNameToBinary.ip!] += 2
 
 			return {}
 		}
@@ -407,13 +407,13 @@ export function run(vm: VM): InstructionResult {
 		case "pop_reg": {
 			const register = memory[instruction + 1]
 
-			registers[registersMap.sp!] -= 1
+			registers[registerNameToBinary.sp!] -= 1
 
-			const value = memory[registers[registersMap.sp!]]
+			const value = memory[registers[registerNameToBinary.sp!]]
 
 			registers[register] = value
 
-			registers[registersMap.ip!] += 2
+			registers[registerNameToBinary.ip!] += 2
 
 			return { registerModified: register }
 		}
@@ -421,21 +421,21 @@ export function run(vm: VM): InstructionResult {
 		case "call": {
 			const procedure = memory[instruction + 1]
 
-			memory[registers[registersMap.sp!]] = registers[registersMap.ip!] + 2
+			memory[registers[registerNameToBinary.sp!]] = registers[registerNameToBinary.ip!] + 2
 
-			registers[registersMap.sp!] += 1
+			registers[registerNameToBinary.sp!] += 1
 
-			registers[registersMap.ip!] = procedure
+			registers[registerNameToBinary.ip!] = procedure
 
 			return {}
 		}
 
 		case "ret": {
-			registers[registersMap.sp!] -= 1
+			registers[registerNameToBinary.sp!] -= 1
 
-			const address = memory[registers[registersMap.sp!]]
+			const address = memory[registers[registerNameToBinary.sp!]]
 
-			registers[registersMap.ip!] = address
+			registers[registerNameToBinary.ip!] = address
 
 			return {}
 		}

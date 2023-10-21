@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { iserr } from "variants-ts";
 
-import { actions, registersMap } from "./src/common";
+import { actionsNameToBinary, registerNameToBinary } from "./src/common";
 import { compile, init } from "./src/compile";
 import { run } from "./src/run";
 
@@ -11,9 +11,9 @@ test("should compile `move`", () => {
 		throw new Error(JSON.stringify(result.data));
 	}
 
-	expect(result.data.memory[0]).toBe(actions.move_reg_reg);
-	expect(result.data.memory[1]).toBe(registersMap.r0);
-	expect(result.data.memory[2]).toBe(registersMap.r1);
+	expect(result.data.memory[0]).toBe(actionsNameToBinary.move_reg_reg);
+	expect(result.data.memory[1]).toBe(registerNameToBinary.r0);
+	expect(result.data.memory[2]).toBe(registerNameToBinary.r1);
 });
 
 test("should compile `move` with literal", () => {
@@ -22,8 +22,8 @@ test("should compile `move` with literal", () => {
 		throw new Error(JSON.stringify(result.data));
 	}
 
-	expect(result.data.memory[0]).toEqual(actions.move_reg_lit);
-	expect(result.data.memory[1]).toEqual(registersMap.r0);
+	expect(result.data.memory[0]).toEqual(actionsNameToBinary.move_reg_lit);
+	expect(result.data.memory[1]).toEqual(registerNameToBinary.r0);
 	expect(result.data.memory[2]).toEqual(5);
 });
 
@@ -33,9 +33,9 @@ test("should compile `move` with dereference", () => {
 		throw new Error(JSON.stringify(result.data));
 	}
 
-	expect(result.data.memory[0]).toEqual(actions.move_reg_dreg);
-	expect(result.data.memory[1]).toEqual(registersMap.r0);
-	expect(result.data.memory[2]).toEqual(registersMap.r1);
+	expect(result.data.memory[0]).toEqual(actionsNameToBinary.move_reg_dreg);
+	expect(result.data.memory[1]).toEqual(registerNameToBinary.r0);
+	expect(result.data.memory[2]).toEqual(registerNameToBinary.r1);
 });
 
 test("should compile example 1", () => {
@@ -48,17 +48,17 @@ test("should compile example 1", () => {
 		throw new Error(JSON.stringify(result.data));
 	}
 
-	expect(result.data.memory[0]).toEqual(actions.move_reg_lit);
-	expect(result.data.memory[1]).toEqual(registersMap.r0);
+	expect(result.data.memory[0]).toEqual(actionsNameToBinary.move_reg_lit);
+	expect(result.data.memory[1]).toEqual(registerNameToBinary.r0);
 	expect(result.data.memory[2]).toEqual(3);
 
-	expect(result.data.memory[3]).toEqual(actions.move_reg_lit);
-	expect(result.data.memory[4]).toEqual(registersMap.r1);
+	expect(result.data.memory[3]).toEqual(actionsNameToBinary.move_reg_lit);
+	expect(result.data.memory[4]).toEqual(registerNameToBinary.r1);
 	expect(result.data.memory[5]).toEqual(2);
 
-	expect(result.data.memory[6]).toEqual(actions.add_reg);
-	expect(result.data.memory[7]).toEqual(registersMap.r0);
-	expect(result.data.memory[8]).toEqual(registersMap.r1);
+	expect(result.data.memory[6]).toEqual(actionsNameToBinary.add_reg);
+	expect(result.data.memory[7]).toEqual(registerNameToBinary.r0);
+	expect(result.data.memory[8]).toEqual(registerNameToBinary.r1);
 });
 
 test("should compile example 2", () => {
@@ -122,12 +122,12 @@ test("should compile example 2", () => {
 		throw new Error(JSON.stringify(result.data));
 	}
 
-	expect(result.data.memory[0]).toEqual(actions.move_reg_lit);
-	expect(result.data.memory[1]).toEqual(registersMap.r1);
+	expect(result.data.memory[0]).toEqual(actionsNameToBinary.move_reg_lit);
+	expect(result.data.memory[1]).toEqual(registerNameToBinary.r1);
 	expect(result.data.memory[2]).toEqual(5);
 
-	expect(result.data.memory[3]).toEqual(actions.move_reg_lit);
-	expect(result.data.memory[4]).toEqual(registersMap.r2);
+	expect(result.data.memory[3]).toEqual(actionsNameToBinary.move_reg_lit);
+	expect(result.data.memory[4]).toEqual(registerNameToBinary.r2);
 	expect(result.data.memory[5]).toEqual(1);
 });
 
@@ -151,148 +151,148 @@ test("should compile and run example3", () => {
 		throw new Error(JSON.stringify(result.data));
 	}
 
-	expect(result.data.memory[0]).toEqual(actions.move_reg_lit);
-	expect(result.data.memory[1]).toEqual(registersMap.r0);
+	expect(result.data.memory[0]).toEqual(actionsNameToBinary.move_reg_lit);
+	expect(result.data.memory[1]).toEqual(registerNameToBinary.r0);
 	expect(result.data.memory[2]).toEqual(0);
 
-	expect(result.data.memory[3]).toEqual(actions.move_reg_lit);
-	expect(result.data.memory[4]).toEqual(registersMap.r1);
+	expect(result.data.memory[3]).toEqual(actionsNameToBinary.move_reg_lit);
+	expect(result.data.memory[4]).toEqual(registerNameToBinary.r1);
 	expect(result.data.memory[5]).toEqual(5);
 
-	expect(result.data.memory[6]).toEqual(actions.move_reg_lit);
-	expect(result.data.memory[7]).toEqual(registersMap.r2);
+	expect(result.data.memory[6]).toEqual(actionsNameToBinary.move_reg_lit);
+	expect(result.data.memory[7]).toEqual(registerNameToBinary.r2);
 	expect(result.data.memory[8]).toEqual(1);
 
-	expect(result.data.memory[9]).toEqual(actions.add_reg);
-	expect(result.data.memory[10]).toEqual(registersMap.r1);
-	expect(result.data.memory[11]).toEqual(registersMap.r2);
+	expect(result.data.memory[9]).toEqual(actionsNameToBinary.add_reg);
+	expect(result.data.memory[10]).toEqual(registerNameToBinary.r1);
+	expect(result.data.memory[11]).toEqual(registerNameToBinary.r2);
 
-	expect(result.data.memory[12]).toEqual(actions.cmp_reg_lit);
-	expect(result.data.memory[13]).toEqual(registersMap.r1);
+	expect(result.data.memory[12]).toEqual(actionsNameToBinary.cmp_reg_lit);
+	expect(result.data.memory[13]).toEqual(registerNameToBinary.r1);
 	expect(result.data.memory[14]).toEqual(10);
 
-	expect(result.data.memory[15]).toEqual(actions.jumpeq);
+	expect(result.data.memory[15]).toEqual(actionsNameToBinary.jumpeq);
 	expect(result.data.memory[16]).toEqual(19);
 
-	expect(result.data.memory[17]).toEqual(actions.jump);
+	expect(result.data.memory[17]).toEqual(actionsNameToBinary.jump);
 	expect(result.data.memory[18]).toEqual(9);
 
-	expect(result.data.memory[19]).toEqual(actions.halt);
+	expect(result.data.memory[19]).toEqual(actionsNameToBinary.halt);
 
 	const vm = init(result.data);
-	expect(vm.registers[registersMap.ip!]).toEqual(0);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(0);
 
 	let line;
 	let ip;
 	// move r0 0
-	ip = vm.registers[registersMap.ip!];
+	ip = vm.registers[registerNameToBinary.ip!];
 	line = vm.maps.get(ip);
 	expect(line).toEqual(4);
 
 	run(vm);
-	expect(vm.registers[registersMap.r0!]).toEqual(0);
-	expect(vm.registers[registersMap.ip!]).toEqual(3);
+	expect(vm.registers[registerNameToBinary.r0!]).toEqual(0);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(3);
 
 	// move r1 101
-	ip = vm.registers[registersMap.ip!];
+	ip = vm.registers[registerNameToBinary.ip!];
 	line = vm.maps.get(ip);
 	expect(line).toEqual(5);
 
 	run(vm);
-	expect(vm.registers[registersMap.r1!]).toEqual(5);
-	expect(vm.registers[registersMap.ip!]).toEqual(6);
+	expect(vm.registers[registerNameToBinary.r1!]).toEqual(5);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(6);
 
 	// move r2 1
 	run(vm);
-	expect(vm.registers[registersMap.r2!]).toEqual(1);
-	expect(vm.registers[registersMap.ip!]).toEqual(9);
+	expect(vm.registers[registerNameToBinary.r2!]).toEqual(1);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(9);
 
 	// add r1 r2
 	run(vm);
-	expect(vm.registers[registersMap.r1!]).toEqual(6);
-	expect(vm.registers[registersMap.ip!]).toEqual(12);
+	expect(vm.registers[registerNameToBinary.r1!]).toEqual(6);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(12);
 
 	// cmp r0 1010
 	run(vm);
-	expect(vm.registers[registersMap.r0!]).toEqual(0);
-	expect(vm.registers[registersMap.ip!]).toEqual(15);
+	expect(vm.registers[registerNameToBinary.r0!]).toEqual(0);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(15);
 
 	// jumpeq @end (noop)
 	run(vm);
-	expect(vm.registers[registersMap.ip!]).toEqual(17);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(17);
 
 	// jump @loop
 	run(vm);
-	expect(vm.registers[registersMap.ip!]).toEqual(9);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(9);
 
 	// add r1 r2
 	run(vm);
-	expect(vm.registers[registersMap.r1!]).toEqual(7);
-	expect(vm.registers[registersMap.ip!]).toEqual(12);
+	expect(vm.registers[registerNameToBinary.r1!]).toEqual(7);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(12);
 
 	// cmp r0 1010
 	run(vm);
-	expect(vm.registers[registersMap.ip!]).toEqual(15);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(15);
 
 	// jumpeq @end (noop)
 	run(vm);
-	expect(vm.registers[registersMap.ip!]).toEqual(17);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(17);
 
 	// jump @loop
 	run(vm);
-	expect(vm.registers[registersMap.ip!]).toEqual(9);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(9);
 
 	// add r1 r2
 	run(vm);
-	expect(vm.registers[registersMap.r1!]).toEqual(8);
-	expect(vm.registers[registersMap.ip!]).toEqual(12);
+	expect(vm.registers[registerNameToBinary.r1!]).toEqual(8);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(12);
 
 	// cmp r0 1010
 	run(vm);
-	expect(vm.registers[registersMap.ip!]).toEqual(15);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(15);
 
 	// jumpeq @end (noop)
 	run(vm);
-	expect(vm.registers[registersMap.ip!]).toEqual(17);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(17);
 
 	// jump @loop
 	run(vm);
-	expect(vm.registers[registersMap.ip!]).toEqual(9);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(9);
 
 	// add r1 r2
 	run(vm);
-	expect(vm.registers[registersMap.r1!]).toEqual(9);
-	expect(vm.registers[registersMap.ip!]).toEqual(12);
+	expect(vm.registers[registerNameToBinary.r1!]).toEqual(9);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(12);
 
 	// cmp r0 1010
 	run(vm);
-	expect(vm.registers[registersMap.ip!]).toEqual(15);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(15);
 
 	// jumpeq @end (noop)
 	run(vm);
-	expect(vm.registers[registersMap.ip!]).toEqual(17);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(17);
 
 	// jump @loop
 	run(vm);
-	expect(vm.registers[registersMap.ip!]).toEqual(9);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(9);
 
 	// add r1 r2
 	run(vm);
-	expect(vm.registers[registersMap.r1!]).toEqual(10);
-	expect(vm.registers[registersMap.ip!]).toEqual(12);
+	expect(vm.registers[registerNameToBinary.r1!]).toEqual(10);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(12);
 
 	// cmp r1 1010
 	run(vm);
-	expect(vm.registers[registersMap.cr!]).toEqual(0);
-	expect(vm.registers[registersMap.ip!]).toEqual(15);
+	expect(vm.registers[registerNameToBinary.cr!]).toEqual(0);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(15);
 
 	// jumpeq @end
-	ip = vm.registers[registersMap.ip!];
+	ip = vm.registers[registerNameToBinary.ip!];
 	line = vm.maps.get(ip);
 	expect(line).toEqual(10);
 
 	run(vm);
-	expect(vm.registers[registersMap.ip!]).toEqual(19);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(19);
 
 	// halt
 	const { shouldHalt } = run(vm);

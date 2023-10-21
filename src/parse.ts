@@ -1,7 +1,7 @@
 import { Result, err, ok } from "variants-ts";
-import { Action, CompileError, Parser, Token, actions, overloads } from "./common";
+import { ActionId, CompileError, ParseAccumulator, Token, actionsNameToBinary, actionOverloads } from "./common";
 
-export function parse(parser: Parser, tokens: Token[], line: number): Parser {
+export function parse(parser: ParseAccumulator, tokens: Token[], line: number): ParseAccumulator {
 	if (tokens.length === 0) {
 		return parser;
 	}
@@ -33,7 +33,7 @@ export function parse(parser: Parser, tokens: Token[], line: number): Parser {
 		return parser;
 	}
 
-	const mapping = overloads.find((m) => {
+	const mapping = actionOverloads.find((m) => {
 		if (m.action !== first.data) {
 			return false;
 		}
@@ -54,7 +54,7 @@ export function parse(parser: Parser, tokens: Token[], line: number): Parser {
 		return parser;
 	}
 
-	const actionCode = actions[mapping.code as Action];
+	const actionCode = actionsNameToBinary[mapping.code as ActionId];
 	if (actionCode === undefined) {
 		throw new Error(`Unknown action code ${mapping.code}`);
 	}
@@ -88,7 +88,7 @@ export function parse(parser: Parser, tokens: Token[], line: number): Parser {
 	return parser;
 }
 
-export function inject(parser: Parser): Result<boolean, CompileError[]> {
+export function inject(parser: ParseAccumulator): Result<boolean, CompileError[]> {
 	const errors = [];
 	for (const { address, label, line } of parser.labelInjections) {
 		const labelAddress = parser.labelAddresses[label];
