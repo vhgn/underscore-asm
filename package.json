@@ -1,7 +1,7 @@
 {
 	"name": "underscore-asm",
 	"description": "Assembly compiler and interpreter (educational)",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"keywords": [
 		"_asm",
 		"assembly",
