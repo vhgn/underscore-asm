@@ -90,8 +90,11 @@ export function run(vm: VM): InstructionResult {
 			const destinationRegister = memory[instruction + 1]
 			const sourceRegister = memory[instruction + 2]
 
-			registers[destinationRegister] += registers[sourceRegister]
+			if (registers[destinationRegister] + registers[sourceRegister] >= Math.pow(2, 16)) {
+				registers[registerNameToBinary.cr!] = 1;
+			}
 
+			registers[destinationRegister] += registers[sourceRegister]
 			registers[registerNameToBinary.ip!] += 3
 
 			return { registerRead: sourceRegister, registerModified: destinationRegister }
@@ -101,8 +104,11 @@ export function run(vm: VM): InstructionResult {
 			const destinationRegister = memory[instruction + 1]
 			const literal = memory[instruction + 2]
 
-			registers[destinationRegister] += literal
+			if (registers[destinationRegister] + literal >= Math.pow(2, 16)) {
+				registers[registerNameToBinary.cr!] = 1;
+			}
 
+			registers[destinationRegister] += literal
 			registers[registerNameToBinary.ip!] += 3
 
 			return { registerModified: destinationRegister }
@@ -112,8 +118,11 @@ export function run(vm: VM): InstructionResult {
 			const destinationRegister = memory[instruction + 1]
 			const sourceRegister = memory[instruction + 2]
 
-			registers[destinationRegister] *= registers[sourceRegister]
+			if (registers[destinationRegister] * registers[sourceRegister] >= Math.pow(2, 16)) {
+				registers[registerNameToBinary.cr!] = 1;
+			}
 
+			registers[destinationRegister] *= registers[sourceRegister]
 			registers[registerNameToBinary.ip!] += 3
 
 			return { registerRead: sourceRegister, registerModified: destinationRegister }
@@ -123,8 +132,11 @@ export function run(vm: VM): InstructionResult {
 			const destinationRegister = memory[instruction + 1]
 			const literal = memory[instruction + 2]
 
-			registers[destinationRegister] *= literal
+			if (registers[destinationRegister] * literal >= Math.pow(2, 16)) {
+				registers[registerNameToBinary.cr!] = 1;
+			}
 
+			registers[destinationRegister] *= literal
 			registers[registerNameToBinary.ip!] += 3
 
 			return { registerModified: destinationRegister }
@@ -304,6 +316,7 @@ export function run(vm: VM): InstructionResult {
 
 			if (registers[registerNameToBinary.cr!] < 0) {
 				registers[registerNameToBinary.ip!] = label
+				registers[registerNameToBinary.cr!] = 0
 			} else {
 				registers[registerNameToBinary.ip!] += 2
 			}
@@ -316,6 +329,7 @@ export function run(vm: VM): InstructionResult {
 
 			if (registers[registerNameToBinary.cr!] <= 0) {
 				registers[registerNameToBinary.ip!] = label
+				registers[registerNameToBinary.cr!] = 0
 			} else {
 				registers[registerNameToBinary.ip!] += 2
 			}
@@ -328,6 +342,7 @@ export function run(vm: VM): InstructionResult {
 
 			if (registers[registerNameToBinary.cr!] === 0) {
 				registers[registerNameToBinary.ip!] = label
+				registers[registerNameToBinary.cr!] = 0
 			} else {
 				registers[registerNameToBinary.ip!] += 2
 			}
@@ -340,6 +355,7 @@ export function run(vm: VM): InstructionResult {
 
 			if (registers[registerNameToBinary.cr!] !== 0) {
 				registers[registerNameToBinary.ip!] = label
+				registers[registerNameToBinary.cr!] = 0
 			} else {
 				registers[registerNameToBinary.ip!] += 2
 			}
@@ -352,6 +368,7 @@ export function run(vm: VM): InstructionResult {
 
 			if (registers[registerNameToBinary.cr!] > 0) {
 				registers[registerNameToBinary.ip!] = label
+				registers[registerNameToBinary.cr!] = 0
 			} else {
 				registers[registerNameToBinary.ip!] += 2
 			}
@@ -364,6 +381,7 @@ export function run(vm: VM): InstructionResult {
 
 			if (registers[registerNameToBinary.cr!] >= 0) {
 				registers[registerNameToBinary.ip!] = label
+				registers[registerNameToBinary.cr!] = 0
 			} else {
 				registers[registerNameToBinary.ip!] += 2
 			}
@@ -375,6 +393,7 @@ export function run(vm: VM): InstructionResult {
 			const label = memory[instruction + 1]
 
 			registers[registerNameToBinary.ip!] = label
+			registers[registerNameToBinary.cr!] = 0
 
 			return {}
 		}

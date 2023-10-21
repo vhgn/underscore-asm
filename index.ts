@@ -20,6 +20,7 @@ export const actionOverloads = common.actionOverloads;
 export const actionsBinaryToName = common.actionsBinaryToName;
 export const actionsNameToBinary = common.actionsNameToBinary;
 export const registerNameToBinary = common.registerNameToBinary;
+export const registerBinaryToName = common.registerBinaryToName;
 
 export const compile = _compile;
 export const init = _init;

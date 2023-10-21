@@ -167,6 +167,20 @@ export const registerNameToBinary: Record<string, number | undefined> = {
 	cr: 0b0000_0000_0000_1010,
 };
 
+export const registerBinaryToName: Record<number, string | undefined> = {
+  [0b0000_0000_0000_0000]: "r0",
+  [0b0000_0000_0000_0001]: "r1",
+  [0b0000_0000_0000_0010]: "r2",
+  [0b0000_0000_0000_0011]: "r3",
+  [0b0000_0000_0000_0100]: "r4",
+  [0b0000_0000_0000_0101]: "r5",
+  [0b0000_0000_0000_0110]: "r6",
+  [0b0000_0000_0000_0111]: "r7",
+  [0b0000_0000_0000_1000]: "ip",
+  [0b0000_0000_0000_1001]: "sp",
+  [0b0000_0000_0000_1010]: "cr",
+};
+
 export type Token =
 	| Variant<"label", string>
 	| Variant<"procedure", string>

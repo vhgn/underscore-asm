@@ -298,3 +298,26 @@ test("should compile and run example3", () => {
 	const { shouldHalt } = run(vm);
 	expect(shouldHalt).toEqual(true);
 });
+
+test("should overflow on add", () => {
+	const compiled = compile(`
+		move r0 1
+		move r1 1111111111111111
+		add r0 r1
+	`);
+
+	if (iserr(compiled)) {
+		throw new Error(JSON.stringify(compiled.data));
+	}
+
+	const vm = init(compiled.data);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(0);
+
+	run(vm);
+	run(vm);
+	run(vm);
+
+	expect(vm.registers[registerNameToBinary.r0!]).toEqual(0);
+	expect(vm.registers[registerNameToBinary.cr!]).toEqual(1);
+});
+
