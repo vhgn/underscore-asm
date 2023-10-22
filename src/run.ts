@@ -291,7 +291,14 @@ export function run(vm: VM): InstructionResult {
 
 			const right = memory[instruction + 2]
 
-			registers[registerNameToBinary.cr!] = left - right;
+			const carry = left - right;
+			if (carry > 0) {
+				registers[registerNameToBinary.cr!] = 1;
+			} else if (carry < 0) {
+				registers[registerNameToBinary.cr!] = -1;
+			} else {
+				registers[registerNameToBinary.cr!] = 0;
+			}
 
 			registers[registerNameToBinary.ip!] += 3
 
@@ -314,7 +321,7 @@ export function run(vm: VM): InstructionResult {
 		case "jumplt": {
 			const label = memory[instruction + 1]
 
-			if (registers[registerNameToBinary.cr!] < 0) {
+			if (registers[registerNameToBinary.cr!] === 0b1111_1111_1111_1111) {
 				registers[registerNameToBinary.ip!] = label
 				registers[registerNameToBinary.cr!] = 0
 			} else {
@@ -327,7 +334,7 @@ export function run(vm: VM): InstructionResult {
 		case "jumple": {
 			const label = memory[instruction + 1]
 
-			if (registers[registerNameToBinary.cr!] <= 0) {
+			if (registers[registerNameToBinary.cr!] !== 1) {
 				registers[registerNameToBinary.ip!] = label
 				registers[registerNameToBinary.cr!] = 0
 			} else {
@@ -366,7 +373,7 @@ export function run(vm: VM): InstructionResult {
 		case "jumpgt": {
 			const label = memory[instruction + 1]
 
-			if (registers[registerNameToBinary.cr!] > 0) {
+			if (registers[registerNameToBinary.cr!] === 1) {
 				registers[registerNameToBinary.ip!] = label
 				registers[registerNameToBinary.cr!] = 0
 			} else {
@@ -379,7 +386,7 @@ export function run(vm: VM): InstructionResult {
 		case "jumpge": {
 			const label = memory[instruction + 1]
 
-			if (registers[registerNameToBinary.cr!] >= 0) {
+			if (registers[registerNameToBinary.cr!] !== 0b1111_1111_1111_1111) {
 				registers[registerNameToBinary.ip!] = label
 				registers[registerNameToBinary.cr!] = 0
 			} else {

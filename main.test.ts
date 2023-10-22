@@ -321,3 +321,124 @@ test("should overflow on add", () => {
 	expect(vm.registers[registerNameToBinary.cr!]).toEqual(1);
 });
 
+test("should jumpge on equal", () => {
+	const compiled = compile(`
+		!loop
+		move r0 1
+		move r1 1111111111111111
+		add r0 r1
+		cmp r0 0
+		jumpge @end
+		jump @loop
+		!end
+		halt
+	`);
+
+	if (iserr(compiled)) {
+		throw new Error(JSON.stringify(compiled.data));
+	}
+
+	const vm = init(compiled.data);
+
+	// move r0 1
+	run(vm);
+
+	// move r1 1111111111111111
+	run(vm);
+
+	// add r0 r1
+	run(vm);
+
+	// cmp r0 0
+	run(vm);
+	expect(vm.registers[registerNameToBinary.cr!]).toEqual(0);
+
+	// jumpge @end
+	run(vm);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(16);
+
+	run(vm);
+	run(vm);
+});
+
+
+test("should jumpge on greater", () => {
+	const compiled = compile(`
+		!loop
+		move r0 1010
+		move r1 11111
+		add r0 r1
+		cmp r0 10
+		jumpge @end
+		jump @loop
+		!end
+		halt
+	`);
+
+	if (iserr(compiled)) {
+		throw new Error(JSON.stringify(compiled.data));
+	}
+
+	const vm = init(compiled.data);
+
+	// move r0 1010
+	run(vm);
+
+	// move r1 11111
+	run(vm);
+
+	// add r0 r1
+	run(vm);
+
+	// cmp r0 10
+	run(vm);
+	expect(vm.registers[registerNameToBinary.cr!]).toBeGreaterThan(0);
+
+	// jumpge @end
+	run(vm);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(16);
+
+	run(vm);
+	run(vm);
+});
+
+test("should not jumpge on less", () => {
+	const compiled = compile(`
+		!loop
+		move r0 1010
+		move r1 11111
+		add r0 r1
+		cmp r0 1111111
+		jumpge @end
+		jump @loop
+		!end
+		halt
+	`);
+
+	if (iserr(compiled)) {
+		throw new Error(JSON.stringify(compiled.data));
+	}
+
+	const vm = init(compiled.data);
+
+	// move r0 1010
+	run(vm);
+
+	// move r1 11111
+	run(vm);
+
+	// add r0 r1
+	run(vm);
+
+	// cmp r0 10
+	run(vm);
+	expect(vm.registers[registerNameToBinary.cr!]).toEqual(0b1111_1111_1111_1111);
+
+	// jumpge @end
+	run(vm);
+	expect(vm.registers[registerNameToBinary.ip!]).toEqual(14);
+
+	run(vm);
+	run(vm);
+});
+
