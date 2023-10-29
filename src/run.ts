@@ -278,7 +278,16 @@ export function run(vm: VM): InstructionResult {
 
 			const left = registers[leftRegister]
 			const right = registers[rightRegister]
-			registers[registerNameToBinary.cr!] = left - right;
+
+			const carry = left - right;
+
+			if (carry > 0) {
+				registers[registerNameToBinary.cr!] = 1;
+			} else if (carry < 0) {
+				registers[registerNameToBinary.cr!] = -1;
+			} else {
+				registers[registerNameToBinary.cr!] = 0;
+			}
 
 			registers[registerNameToBinary.ip!] += 3
 
@@ -292,6 +301,7 @@ export function run(vm: VM): InstructionResult {
 			const right = memory[instruction + 2]
 
 			const carry = left - right;
+
 			if (carry > 0) {
 				registers[registerNameToBinary.cr!] = 1;
 			} else if (carry < 0) {
@@ -311,7 +321,15 @@ export function run(vm: VM): InstructionResult {
 			const rightRegister = memory[instruction + 2]
 			const right = registers[rightRegister]
 
-			registers[registerNameToBinary.cr!] = left - right;
+			const carry = left - right;
+
+			if (carry > 0) {
+				registers[registerNameToBinary.cr!] = 1;
+			} else if (carry < 0) {
+				registers[registerNameToBinary.cr!] = -1;
+			} else {
+				registers[registerNameToBinary.cr!] = 0;
+			}
 
 			registers[registerNameToBinary.ip!] += 3
 
